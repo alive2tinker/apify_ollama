@@ -6,9 +6,12 @@ from app.database import get_db
 from app.auth import verify_bearer_token
 from app.ollama_proxy import OllamaProxy
 from app.models import ApiRequestLog
+from fastapi.responses import JSONResponse
+import uuid
+import time
 import json
 
-router = APIRouter(prefix="/api", tags=["ollama"])
+router = APIRouter(tags=["openai-compatible"])
 
 # Initialize Ollama proxy
 ollama_proxy = OllamaProxy()
@@ -37,78 +40,94 @@ def verify_bearer_token_dependency(token: str = Depends(get_bearer_token), db: S
         )
     return db_api_key
 
-@router.get("/tags")
-async def list_models(api_key_obj = Depends(verify_bearer_token_dependency), db: Session = Depends(get_db)):
-    log_api_request(db, api_key_obj, "/api/tags")
-    response, status_code = await ollama_proxy.list_models()
-    return response
-
-@router.post("/generate")
-async def generate_text(
-    data: Dict[str, Any],
+# OpenAI-compatible /v1/models endpoint
+@router.get("/v1/models")
+async def openai_models(
     api_key_obj = Depends(verify_bearer_token_dependency),
     db: Session = Depends(get_db)
 ):
-    log_api_request(db, api_key_obj, "/api/generate")
-    response, status_code = await ollama_proxy.generate(data)
-    return response
+    log_api_request(db, api_key_obj, "/v1/models")
+    ollama_response, _ = await ollama_proxy.list_models()
+    # Map Ollama response to OpenAI models format
+    models = ollama_response.get("models", [])
+    openai_models = [
+        {
+            "id": m.get("name"),
+            "object": "model",
+            "created": int(time.time()),
+            "owned_by": "ollama"
+        } for m in models
+    ]
+    return JSONResponse(content={"object": "list", "data": openai_models})
 
-@router.post("/chat")
-async def chat_with_model(
-    data: Dict[str, Any],
+# OpenAI-compatible /v1/completions endpoint
+@router.post("/v1/completions")
+async def openai_completions(
+    request: Dict[str, Any],
     api_key_obj = Depends(verify_bearer_token_dependency),
     db: Session = Depends(get_db)
 ):
-    log_api_request(db, api_key_obj, "/api/chat")
-    response, status_code = await ollama_proxy.chat(data)
-    return response
+    log_api_request(db, api_key_obj, "/v1/completions")
+    ollama_req = {
+        "model": request.get("model"),
+        "prompt": request.get("prompt"),
+        "stream": False
+    }
+    ollama_response, _ = await ollama_proxy.generate(ollama_req)
+    openai_resp = {
+        "id": f"cmpl-{uuid.uuid4().hex}",
+        "object": "text_completion",
+        "created": int(time.time()),
+        "model": request.get("model"),
+        "choices": [
+            {
+                "text": ollama_response.get("response", ""),
+                "index": 0,
+                "logprobs": None,
+                "finish_reason": "stop"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": ollama_response.get("prompt_eval_count", 0),
+            "completion_tokens": ollama_response.get("eval_count", 0),
+            "total_tokens": ollama_response.get("prompt_eval_count", 0) + ollama_response.get("eval_count", 0)
+        }
+    }
+    return JSONResponse(content=openai_resp)
 
-@router.post("/pull")
-async def pull_model(
-    data: Dict[str, Any],
+# OpenAI-compatible /v1/chat/completions endpoint
+@router.post("/v1/chat/completions")
+async def openai_chat_completions(
+    request: Dict[str, Any],
     api_key_obj = Depends(verify_bearer_token_dependency),
     db: Session = Depends(get_db)
 ):
-    log_api_request(db, api_key_obj, "/api/pull")
-    response, status_code = await ollama_proxy.pull_model(data)
-    return response
-
-@router.post("/push")
-async def push_model(
-    data: Dict[str, Any],
-    api_key_obj = Depends(verify_bearer_token_dependency),
-    db: Session = Depends(get_db)
-):
-    log_api_request(db, api_key_obj, "/api/push")
-    response, status_code = await ollama_proxy.push_model(data)
-    return response
-
-@router.post("/create")
-async def create_model(
-    data: Dict[str, Any],
-    api_key_obj = Depends(verify_bearer_token_dependency),
-    db: Session = Depends(get_db)
-):
-    log_api_request(db, api_key_obj, "/api/create")
-    response, status_code = await ollama_proxy.create_model(data)
-    return response
-
-@router.delete("/delete")
-async def delete_model(
-    data: Dict[str, Any],
-    api_key_obj = Depends(verify_bearer_token_dependency),
-    db: Session = Depends(get_db)
-):
-    log_api_request(db, api_key_obj, "/api/delete")
-    response, status_code = await ollama_proxy.delete_model(data.get("name"))
-    return response
-
-@router.post("/show")
-async def show_model(
-    data: Dict[str, Any],
-    api_key_obj = Depends(verify_bearer_token_dependency),
-    db: Session = Depends(get_db)
-):
-    log_api_request(db, api_key_obj, "/api/show")
-    response, status_code = await ollama_proxy.show_model(data)
-    return response 
+    log_api_request(db, api_key_obj, "/v1/chat/completions")
+    ollama_req = {
+        "model": request.get("model"),
+        "messages": request.get("messages"),
+        "stream": False
+    }
+    ollama_response, _ = await ollama_proxy.chat(ollama_req)
+    openai_resp = {
+        "id": f"chatcmpl-{uuid.uuid4().hex}",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": request.get("model"),
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": ollama_response.get("message", {}).get("content", "") or ollama_response.get("response", "")
+                },
+                "finish_reason": "stop"
+            }
+        ],
+        "usage": {
+            "prompt_tokens": ollama_response.get("prompt_eval_count", 0),
+            "completion_tokens": ollama_response.get("eval_count", 0),
+            "total_tokens": ollama_response.get("prompt_eval_count", 0) + ollama_response.get("eval_count", 0)
+        }
+    }
+    return JSONResponse(content=openai_resp) 
