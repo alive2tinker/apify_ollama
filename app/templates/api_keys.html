@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}API Keys - Ollama API Middleware{% endblock %}
+{% block title %}Bearer Tokens - Ollama API Middleware{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold">API Keys Management</h1>
+        <h1 class="text-3xl font-bold">Bearer Tokens Management</h1>
         <button class="btn btn-primary" onclick="document.getElementById('create-key-modal').showModal()">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
-            Create New API Key
+            Create New Bearer Token
         </button>
     </div>
 
@@ -34,17 +34,17 @@
     </div>
     {% endif %}
 
-    <!-- API Keys Table -->
+    <!-- Bearer Tokens Table -->
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <h2 class="card-title">API Keys</h2>
+            <h2 class="card-title">Bearer Tokens</h2>
             {% if api_keys %}
             <div class="overflow-x-auto">
                 <table class="table table-zebra">
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>API Key</th>
+                            <th>Bearer Token</th>
                             <th>Status</th>
                             <th>Created</th>
                             <th>Last Used</th>
@@ -103,9 +103,9 @@
                 <svg class="w-16 h-16 mx-auto text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                 </svg>
-                <p class="text-base-content/70 mt-4">No API keys found</p>
+                <p class="text-base-content/70 mt-4">No Bearer tokens found</p>
                 <button class="btn btn-primary mt-4" onclick="document.getElementById('create-key-modal').showModal()">
-                    Create your first API key
+                    Create your first Bearer token
                 </button>
             </div>
             {% endif %}
@@ -113,16 +113,16 @@
     </div>
 </div>
 
-<!-- Create API Key Modal -->
+<!-- Create Bearer Token Modal -->
 <dialog id="create-key-modal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg">Create New API Key</h3>
+        <h3 class="font-bold text-lg">Create New Bearer Token</h3>
         <form method="POST" action="/api-keys">
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text">Key Name</span>
+                    <span class="label-text">Token Name</span>
                 </label>
-                <input type="text" name="key_name" placeholder="Enter a name for this API key" class="input input-bordered" required />
+                <input type="text" name="key_name" placeholder="Enter a name for this Bearer token" class="input input-bordered" required />
             </div>
             <div class="modal-action">
                 <button type="button" class="btn" onclick="document.getElementById('create-key-modal').close()">Cancel</button>
@@ -155,7 +155,7 @@ function toggleKeyStatus(id, isActive) {
 }
 
 function deleteKey(id) {
-    if (confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this Bearer token? This action cannot be undone.')) {
         fetch(`/api-keys/${id}`, {
             method: 'DELETE'
         }).then(() => {

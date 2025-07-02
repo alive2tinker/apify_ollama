@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.database import engine, get_db
-from app.models import Base, User, ApiKey
+from app.models import Base, User, ApiKey, ApiRequestLog
 from app.api_routes import router as api_router
 from app.admin_routes import router as admin_router
 from app.web_routes import router as web_router

@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
-from app.models import User, ApiKey
+from app.models import User, ApiKey, ApiRequestLog
 from app.auth import authenticate_user, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.crud import create_user, get_api_keys, create_api_key, update_api_key, delete_api_key, get_user
 from app.schemas import UserCreate, ApiKeyCreate
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
+from sqlalchemy import func, and_
 import os
 
 router = APIRouter(tags=["web"])
@@ -39,13 +40,19 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     
     # Get recent activity (last 5 API keys with recent usage)
     recent_activity = db.query(ApiKey).order_by(ApiKey.last_used.desc()).limit(5).all()
-    
+
+    # Count API requests today
+    today = date.today()
+    requests_today = db.query(func.count()).select_from(ApiRequestLog).filter(
+        func.date(ApiRequestLog.timestamp) == today
+    ).scalar()
+
     stats = {
         "total_api_keys": total_api_keys,
         "active_api_keys": active_api_keys,
         "total_users": total_users,
         "active_users": active_users,
-        "requests_today": 0,  # Placeholder - implement request tracking
+        "requests_today": requests_today,
         "requests_increase": 0  # Placeholder
     }
     
@@ -126,14 +133,14 @@ async def create_api_key_web(
 @router.put("/api-keys/{api_key_id}")
 async def update_api_key_web(
     api_key_id: int,
-    is_active: bool,
     request: Request,
+    data: dict = Body(...),
     db: Session = Depends(get_db)
 ):
     user = get_session_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
+    is_active = data.get("is_active")
     db_api_key = update_api_key(db, api_key_id, is_active)
     if not db_api_key:
         raise HTTPException(status_code=404, detail="API key not found")

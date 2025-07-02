@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Example usage of the Ollama API Middleware
-This script demonstrates how to use the API with authentication
+This script demonstrates how to use the API with Bearer token authentication
 """
 
 import requests
@@ -9,10 +9,10 @@ import json
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-API_KEY = "your-api-key-here"  # Replace with your actual API key
+BEARER_TOKEN = "your-bearer-token-here"  # Replace with your actual Bearer token
 
 headers = {
-    "X-API-Key": API_KEY,
+    "Authorization": f"Bearer {BEARER_TOKEN}",
     "Content-Type": "application/json"
 }
 
@@ -69,14 +69,14 @@ def main():
     print("🤖 Ollama API Middleware Example")
     print("=" * 40)
     
-    # First, get your API key from the web interface
-    print("1. Get your API key from http://localhost:8000")
-    print("2. Update the API_KEY variable in this script")
+    # First, get your Bearer token from the web interface
+    print("1. Get your Bearer token from http://localhost:8000")
+    print("2. Update the BEARER_TOKEN variable in this script")
     print("3. Make sure Ollama is running on localhost:11434")
     print()
     
-    if API_KEY == "your-api-key-here":
-        print("❌ Please update the API_KEY variable with your actual API key")
+    if BEARER_TOKEN == "your-bearer-token-here":
+        print("❌ Please update the BEARER_TOKEN variable with your actual Bearer token")
         return
     
     # List available models

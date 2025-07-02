@@ -70,8 +70,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         )
     return user
 
-def verify_api_key(api_key: str, db: Session):
-    db_api_key = db.query(ApiKey).filter(ApiKey.api_key == api_key, ApiKey.is_active == True).first()
+def verify_bearer_token(token: str, db: Session):
+    """Verify Bearer token by checking if it exists in the database"""
+    # Find the API key (Bearer token) in the database
+    db_api_key = db.query(ApiKey).filter(ApiKey.api_key == token, ApiKey.is_active == True).first()
     if not db_api_key:
         return None
     
@@ -81,7 +83,7 @@ def verify_api_key(api_key: str, db: Session):
     
     return db_api_key
 
-def generate_api_key(length: int = 32):
-    """Generate a random API key"""
+def generate_bearer_token(length: int = 64):
+    """Generate a random Bearer token"""
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length)) 

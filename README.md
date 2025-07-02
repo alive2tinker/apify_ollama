@@ -1,15 +1,15 @@
 # Ollama API Middleware
 
-A FastAPI-based middleware service that adds API key authentication to Ollama, since Ollama itself doesn't support API keys. This service provides a secure way to access Ollama's API with proper authentication and user management.
+A FastAPI-based middleware service that adds Bearer token authentication to Ollama, since Ollama itself doesn't support authentication. This service provides a secure way to access Ollama's API with proper authentication and user management.
 
 ## Features
 
-- 🔐 **API Key Authentication**: Secure access to Ollama API with custom API keys
-- 👥 **User Management**: Admin interface for managing users and API keys
+- 🔐 **Bearer Token Authentication**: Secure access to Ollama API with standard Bearer tokens
+- 👥 **User Management**: Admin interface for managing users and Bearer tokens
 - 🎨 **Modern UI**: Beautiful web interface built with TailwindCSS and DaisyUI
 - 📊 **Dashboard**: Real-time statistics and monitoring
 - 🔄 **Proxy Service**: Seamlessly forwards requests to Ollama API
-- 💾 **SQLite Database**: Lightweight data storage for users and API keys
+- 💾 **SQLite Database**: Lightweight data storage for users and Bearer tokens
 - 🚀 **FastAPI**: High-performance async web framework
 
 ## Quick Start
@@ -52,40 +52,48 @@ A FastAPI-based middleware service that adds API key authentication to Ollama, s
 ### Web Interface
 
 1. **Login**: Use the default admin credentials or create a new user
-2. **Create API Keys**: Navigate to the API Keys page and create new keys
+2. **Create Bearer Tokens**: Navigate to the Bearer Tokens page and create new tokens
 3. **Manage Users**: Add or remove users from the Users page
 4. **Monitor Usage**: View statistics and recent activity on the dashboard
 
 ### API Usage
 
-All API endpoints require an API key in the `X-API-Key` header:
+All API endpoints require a Bearer token in the `Authorization` header:
 
 ```bash
 # List models
-curl -H "X-API-Key: your-api-key" http://localhost:8000/api/tags
+curl -H "Authorization: Bearer your-bearer-token" http://localhost:8000/api/tags
 
 # Generate text
-curl -X POST -H "X-API-Key: your-api-key" \
+curl -X POST -H "Authorization: Bearer your-bearer-token" \
   -H "Content-Type: application/json" \
   -d '{"model": "llama2", "prompt": "Hello, world!"}' \
   http://localhost:8000/api/generate
 
 # Chat with model
-curl -X POST -H "X-API-Key: your-api-key" \
+curl -X POST -H "Authorization: Bearer your-bearer-token" \
   -H "Content-Type: application/json" \
   -d '{"model": "llama2", "messages": [{"role": "user", "content": "Hello!"}]}' \
   http://localhost:8000/api/chat
 ```
+
+### Postman Setup
+
+1. **Create a new request**
+2. **Go to the Authorization tab**
+3. **Select "Bearer Token" from the Type dropdown**
+4. **Enter your Bearer token in the Token field**
+5. **Make your API requests** - the token will be automatically included in the Authorization header
 
 ### Python Client Example
 
 ```python
 import requests
 
-API_KEY = "your-api-key"
+BEARER_TOKEN = "your-bearer-token"
 BASE_URL = "http://localhost:8000"
 
-headers = {"X-API-Key": API_KEY}
+headers = {"Authorization": f"Bearer {BEARER_TOKEN}"}
 
 # List models
 response = requests.get(f"{BASE_URL}/api/tags", headers=headers)
@@ -102,7 +110,7 @@ result = response.json()
 
 ## API Endpoints
 
-### Ollama Proxy Endpoints (require API key)
+### Ollama Proxy Endpoints (require Bearer token)
 
 - `GET /api/tags` - List available models
 - `POST /api/generate` - Generate text
@@ -117,16 +125,16 @@ result = response.json()
 
 - `POST /admin/token` - Login and get JWT token
 - `POST /admin/users` - Create new user
-- `GET /admin/api-keys` - List API keys
-- `POST /admin/api-keys` - Create new API key
-- `PUT /admin/api-keys/{id}` - Update API key status
-- `DELETE /admin/api-keys/{id}` - Delete API key
+- `GET /admin/api-keys` - List Bearer tokens
+- `POST /admin/api-keys` - Create new Bearer token
+- `PUT /admin/api-keys/{id}` - Update Bearer token status
+- `DELETE /admin/api-keys/{id}` - Delete Bearer token
 
 ### Web Interface
 
 - `GET /` - Dashboard
 - `GET /login` - Login page
-- `GET /api-keys` - API keys management
+- `GET /api-keys` - Bearer tokens management
 - `GET /users` - Users management
 
 ## Configuration
@@ -182,7 +190,7 @@ The application uses SQLite by default. The database file is created automatical
 1. **Change Default Credentials**: Update the default admin password after first login
 2. **Secure Secret Key**: Use a strong secret key in production
 3. **HTTPS**: Use HTTPS in production environments
-4. **API Key Rotation**: Regularly rotate API keys
+4. **Bearer Token Rotation**: Regularly rotate Bearer tokens
 5. **Rate Limiting**: Consider implementing rate limiting for production use
 
 ## Development
@@ -259,7 +267,8 @@ This is because **Python 3.13 is not yet fully supported** by Pydantic and FastA
 1. **Ollama Connection Error**: Ensure Ollama is running on http://localhost:11434
 2. **Database Error**: Check file permissions for the data directory
 3. **Import Error**: Ensure all dependencies are installed
-4. **Port Already in Use**: Change the port in the configuration
+4. **Port Already in Use**: The application will automatically find the next available port
+5. **Bearer Token Not Working**: Ensure you're using the correct format: `Authorization: Bearer your-token`
 
 ### Logs
 

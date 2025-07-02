@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import User, ApiKey
 from app.schemas import UserCreate, ApiKeyCreate
-from app.auth import get_password_hash, generate_api_key
+from app.auth import get_password_hash, generate_bearer_token
 
 def get_user(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
@@ -21,8 +21,8 @@ def get_api_key(db: Session, api_key_id: int):
     return db.query(ApiKey).filter(ApiKey.id == api_key_id).first()
 
 def create_api_key(db: Session, api_key: ApiKeyCreate):
-    generated_key = generate_api_key()
-    db_api_key = ApiKey(key_name=api_key.key_name, api_key=generated_key)
+    generated_token = generate_bearer_token()
+    db_api_key = ApiKey(key_name=api_key.key_name, api_key=generated_token)
     db.add(db_api_key)
     db.commit()
     db.refresh(db_api_key)
