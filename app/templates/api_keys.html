@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}API Keys - Ollama API Middleware{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold">API Keys Management</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('create-key-modal').showModal()">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Create New API Key
+        </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if message %}
+    <div class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ message }}</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <!-- API Keys Table -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">API Keys</h2>
+            {% if api_keys %}
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>API Key</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Used</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for api_key in api_keys %}
+                        <tr>
+                            <td>
+                                <div class="font-bold">{{ api_key.key_name }}</div>
+                            </td>
+                            <td>
+                                <div class="api-key-display">
+                                    <span id="key-{{ api_key.id }}">{{ api_key.api_key[:8] }}...</span>
+                                    <button class="btn btn-ghost btn-xs ml-2" onclick="toggleKeyVisibility({{ api_key.id }}, '{{ api_key.api_key }}')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                {% if api_key.is_active %}
+                                <span class="badge badge-success">Active</span>
+                                {% else %}
+                                <span class="badge badge-error">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ api_key.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ api_key.last_used.strftime('%Y-%m-%d %H:%M') if api_key.last_used else 'Never' }}</td>
+                            <td>
+                                <div class="flex space-x-2">
+                                    {% if api_key.is_active %}
+                                    <button class="btn btn-warning btn-xs" onclick="toggleKeyStatus({{ api_key.id }}, false)">
+                                        Deactivate
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-success btn-xs" onclick="toggleKeyStatus({{ api_key.id }}, true)">
+                                        Activate
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-error btn-xs" onclick="deleteKey({{ api_key.id }})">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <svg class="w-16 h-16 mx-auto text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                </svg>
+                <p class="text-base-content/70 mt-4">No API keys found</p>
+                <button class="btn btn-primary mt-4" onclick="document.getElementById('create-key-modal').showModal()">
+                    Create your first API key
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Create API Key Modal -->
+<dialog id="create-key-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Create New API Key</h3>
+        <form method="POST" action="/api-keys">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Key Name</span>
+                </label>
+                <input type="text" name="key_name" placeholder="Enter a name for this API key" class="input input-bordered" required />
+            </div>
+            <div class="modal-action">
+                <button type="button" class="btn" onclick="document.getElementById('create-key-modal').close()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+function toggleKeyVisibility(id, fullKey) {
+    const element = document.getElementById(`key-${id}`);
+    if (element.textContent.includes('...')) {
+        element.textContent = fullKey;
+    } else {
+        element.textContent = fullKey.substring(0, 8) + '...';
+    }
+}
+
+function toggleKeyStatus(id, isActive) {
+    fetch(`/api-keys/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: isActive })
+    }).then(() => {
+        window.location.reload();
+    });
+}
+
+function deleteKey(id) {
+    if (confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
+        fetch(`/api-keys/${id}`, {
+            method: 'DELETE'
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+}
+</script>
+{% endblock %} 
