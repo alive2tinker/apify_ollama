@@ -35,11 +35,15 @@ A FastAPI-based middleware service that adds API key authentication to Ollama, s
 
 3. **Run the application**
    ```bash
-   python -m app.main
+   # Production mode (clean output, no debug info)
+   python run.py
+   
+   # Development mode (verbose output, auto-reload)
+   DEBUG=true python run.py
    ```
 
 4. **Access the application**
-   - Web UI: http://localhost:8000
+   - Web UI: http://localhost:8000 (or next available port)
    - API Documentation: http://localhost:8000/docs
    - Default admin credentials: `admin` / `admin123`
 
@@ -132,6 +136,9 @@ result = response.json()
 Create a `.env` file in the root directory:
 
 ```env
+# Debug Mode (development vs production)
+DEBUG=false
+
 # Database
 DATABASE_URL=sqlite:///./data/ollama_middleware.db
 
@@ -142,6 +149,29 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # Ollama Settings
 OLLAMA_BASE_URL=http://localhost:11434
 ```
+
+### Debug Mode
+
+The application supports a `DEBUG` environment variable to control logging and output:
+
+- **`DEBUG=false`** (default): Clean production output, suppressed warnings
+- **`DEBUG=true`**: Verbose development output, auto-reload, debug logs
+
+**Usage:**
+```bash
+# Production mode
+python run.py
+
+# Development mode
+DEBUG=true python run.py
+```
+
+**What changes in debug mode:**
+- Shows detailed startup messages
+- Enables auto-reload on file changes
+- Shows bcrypt warnings and verbose logs
+- Displays default admin credentials
+- Uses debug log level
 
 ### Database
 

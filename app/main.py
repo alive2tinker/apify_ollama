@@ -10,6 +10,17 @@ from app.web_routes import router as web_router
 from app.crud import create_user
 from app.schemas import UserCreate
 import os
+import logging
+
+# Configure logging based on environment
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+if not DEBUG:
+    # Suppress bcrypt warnings in production
+    logging.getLogger("passlib").setLevel(logging.ERROR)
+    # Suppress other verbose logs
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -45,8 +56,11 @@ async def startup_event():
         # Create default admin user
         admin_data = UserCreate(username="admin", password="admin123")
         create_user(db, admin_data)
-        print("Default admin user created: username=admin, password=admin123")
-        print("Please change the default password after first login!")
+        if DEBUG:
+            print("Default admin user created: username=admin, password=admin123")
+            print("Please change the default password after first login!")
+        else:
+            print("✅ Application started successfully")
     
     db.close()
 
