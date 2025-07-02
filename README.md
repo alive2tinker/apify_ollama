@@ -17,6 +17,7 @@ A FastAPI-based middleware service that adds API key authentication to Ollama, s
 ### Prerequisites
 
 - Python 3.8+
+- **Recommended: Python 3.10 or 3.11** (see Troubleshooting below)
 - Ollama running locally (default: http://localhost:11434)
 
 ### Installation
@@ -194,6 +195,34 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Troubleshooting
+
+### Python Version Compatibility (pydantic-core build error)
+
+If you see an error like this when installing dependencies:
+
+```
+TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
+ERROR: Failed building wheel for pydantic-core
+ERROR: Failed to build installable wheels for some pyproject.toml based projects (pydantic-core)
+```
+
+This is because **Python 3.13 is not yet fully supported** by Pydantic and FastAPI dependencies. To fix this:
+
+1. **Use Python 3.10 or 3.11** (recommended):
+   - Create a new virtual environment:
+     ```bash
+     python3.11 -m venv .venv
+     source .venv/bin/activate
+     # or for Python 3.10
+     python3.10 -m venv .venv
+     source .venv/bin/activate
+     ```
+   - Reinstall dependencies:
+     ```bash
+     pip install --upgrade pip
+     pip install -r requirements.txt
+     ```
+2. If you must use Python 3.13, you will need to wait for upstream support from Pydantic and FastAPI, or try using their development versions (not recommended for production).
 
 ### Common Issues
 
