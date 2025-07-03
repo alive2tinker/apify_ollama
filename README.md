@@ -24,7 +24,7 @@ A FastAPI-based middleware service that adds Bearer token authentication to Olla
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone [https://github.com/alive2tinker/apify_ollama.git](https://github.com/alive2tinker/apify_ollama.git)
    cd ollama-api-middleware
    ```
 
